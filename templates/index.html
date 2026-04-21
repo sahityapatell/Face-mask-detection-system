@@ -1,89 +1,192 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Face Mask Detection</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            background: #0f0f1a;
-            color: #e0e0e0;
-            font-family: 'Segoe UI', sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            padding: 30px 20px;
-        }
-
-        h1 {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 8px;
-            background: linear-gradient(135deg, #00c6ff, #0072ff);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        p.subtitle {
-            color: #888;
-            margin-bottom: 30px;
-            font-size: 0.95rem;
-        }
-
-        .stream-container {
-            border: 2px solid #1e3a5f;
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 0 40px rgba(0, 114, 255, 0.2);
-            background: #000;
-        }
-
-        .stream-container img {
-            display: block;
-            width: 640px;
-            max-width: 100%;
-        }
-
-        .status {
-            margin-top: 16px;
-            font-size: 0.85rem;
-            color: #00c6ff;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .dot {
-            width: 10px;
-            height: 10px;
-            background: #00c6ff;
-            border-radius: 50%;
-            animation: pulse 1.5s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MaskScan — Face Mask Detection</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;700;900&display=swap"
+    rel="stylesheet" />
 </head>
+
 <body>
 
-    <h1>Face Mask Detection</h1>
-    <p class="subtitle">Real-time detection powered by YOLOv8</p>
+  <!-- Scanline overlay -->
+  <div class="scanlines"></div>
+  <!-- Grid background -->
+  <div class="grid-bg"></div>
 
-    <div class="stream-container">
-        <img src="{{ url_for('video_feed') }}" alt="Live Detection Stream">
+  <header class="header">
+    <div class="logo">
+      <span class="logo-bracket">[</span>
+      <span class="logo-icon">◈</span>
+      <span class="logo-text">MASKSCAN</span>
+      <span class="logo-bracket">]</span>
+    </div>
+    <div class="header-status">
+      <span class="status-dot" id="statusDot"></span>
+      <span class="status-label" id="statusLabel">SYSTEM READY</span>
+    </div>
+    <div class="header-meta">
+      <span class="meta-item">YOLOv8</span>
+      <span class="meta-sep">//</span>
+      <span class="meta-item">REAL-TIME</span>
+    </div>
+  </header>
+
+  <main class="main">
+
+    <!-- Hero title block -->
+    <section class="hero">
+      <p class="hero-sub">DETECTION INTERFACE v2.4</p>
+      <h1 class="hero-title">Face Mask<br /><em>Detection</em></h1>
+      <p class="hero-desc">
+        Select a detection mode below. The system uses a trained YOLOv8 model
+        to identify mask-wearing status in real time or from uploaded images.
+      </p>
+    </section>
+
+    <!-- Mode selector tabs -->
+    <div class="mode-tabs" role="tablist">
+      <button class="tab active" id="tabLive" role="tab" aria-selected="true" onclick="switchMode('live')">
+        <span class="tab-icon">⬤</span>
+        <span class="tab-label">Live Camera</span>
+        <span class="tab-hint">Real-time stream</span>
+      </button>
+      <button class="tab" id="tabImage" role="tab" aria-selected="false" onclick="switchMode('image')">
+        <span class="tab-icon">▣</span>
+        <span class="tab-label">Image Upload</span>
+        <span class="tab-hint">Static analysis</span>
+      </button>
     </div>
 
-    <div class="status">
-        <div class="dot"></div>
-        Live — webcam stream active
-    </div>
+    <!-- ── LIVE CAMERA PANEL ───────────────────────────────────────────────── -->
+    <section class="panel" id="panelLive">
+      <div class="panel-header">
+        <span class="panel-title">LIVE CAMERA FEED</span>
+        <div class="panel-controls">
+          <button class="ctrl-btn" id="btnStart" onclick="startCamera()">
+            <span>▶</span> START DETECTION
+          </button>
+          <button class="ctrl-btn danger hidden" id="btnStop" onclick="stopCamera()">
+            <span>■</span> STOP
+          </button>
+        </div>
+      </div>
 
+      <div class="viewport" id="liveViewport">
+        <div class="viewport-idle" id="liveIdle">
+          <div class="idle-icon">◉</div>
+          <p class="idle-text">Camera feed inactive</p>
+          <p class="idle-hint">Press START DETECTION to begin</p>
+        </div>
+
+        <!-- Live stream from Flask /video_feed -->
+        <img id="liveStream" class="hidden" src="" alt="Live detection feed" />
+
+        <!-- Corner decorations -->
+        <span class="corner tl"></span>
+        <span class="corner tr"></span>
+        <span class="corner bl"></span>
+        <span class="corner br"></span>
+      </div>
+
+      <div class="live-stats" id="liveStats">
+        <div class="stat">
+          <span class="stat-label">MODE</span>
+          <span class="stat-value" id="statMode">—</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">SOURCE</span>
+          <span class="stat-value" id="statSource">—</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">MODEL</span>
+          <span class="stat-value accent">YOLOv8</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">CONF</span>
+          <span class="stat-value accent">0.50</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── IMAGE UPLOAD PANEL ─────────────────────────────────────────────── -->
+    <section class="panel hidden" id="panelImage">
+      <div class="panel-header">
+        <span class="panel-title">IMAGE ANALYSIS</span>
+      </div>
+
+      <form id="uploadForm" action="/detect_image" method="POST" enctype="multipart/form-data">
+
+        <!-- Drop zone -->
+        <div class="drop-zone" id="dropZone" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)"
+          ondrop="handleDrop(event)" onclick="document.getElementById('fileInput').click()">
+          <input type="file" id="fileInput" name="image" accept=".jpg,.jpeg,.png,.gif,.bmp,.webp" hidden
+            onchange="previewFile(event)" />
+          <div class="drop-content" id="dropContent">
+            <div class="drop-icon">⊕</div>
+            <p class="drop-text">Drop image here or click to browse</p>
+            <p class="drop-hint">Supports JPG, PNG, GIF, BMP, WEBP</p>
+          </div>
+          <!-- Preview -->
+          <img id="previewImg" class="preview-img hidden" alt="Preview" />
+          <span class="corner tl"></span>
+          <span class="corner tr"></span>
+          <span class="corner bl"></span>
+          <span class="corner br"></span>
+        </div>
+
+        <div class="upload-actions" id="uploadActions">
+          <span class="file-name" id="fileName">No file selected</span>
+          <button type="submit" class="ctrl-btn" id="btnAnalyze" disabled>
+            <span>⟳</span> ANALYZE IMAGE
+          </button>
+        </div>
+
+      </form>
+
+      <!-- Result display -->
+      {% if image %}
+      <div class="result-block">
+        <div class="result-header">
+          <span class="result-label">◈ DETECTION RESULT</span>
+        </div>
+        <div class="viewport">
+          <img src="{{ url_for('static', filename=image) }}" alt="Detection result" class="result-img" />
+          <span class="corner tl"></span>
+          <span class="corner tr"></span>
+          <span class="corner bl"></span>
+          <span class="corner br"></span>
+        </div>
+        <a href="/" class="ctrl-btn outline" style="display:inline-flex;margin-top:1rem;">← ANALYZE ANOTHER</a>
+      </div>
+      {% endif %}
+
+      <!-- Flash messages from Flask -->
+      {% with messages = get_flashed_messages() %}
+      {% if messages %}
+      <div class="flash-list">
+        {% for msg in messages %}
+        <div class="flash-msg">⚠ {{ msg }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% endwith %}
+
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <span>MASKSCAN — YOLOv8 POWERED DETECTION</span>
+    <span class="footer-sep">//</span>
+    <span>REAL-TIME COMPUTER VISION</span>
+  </footer>
+
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
+
 </html>
