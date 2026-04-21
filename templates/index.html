@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Mask Detection</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #0f0f1a;
+            color: #e0e0e0;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 30px 20px;
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #00c6ff, #0072ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.subtitle {
+            color: #888;
+            margin-bottom: 30px;
+            font-size: 0.95rem;
+        }
+
+        .stream-container {
+            border: 2px solid #1e3a5f;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 0 40px rgba(0, 114, 255, 0.2);
+            background: #000;
+        }
+
+        .stream-container img {
+            display: block;
+            width: 640px;
+            max-width: 100%;
+        }
+
+        .status {
+            margin-top: 16px;
+            font-size: 0.85rem;
+            color: #00c6ff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            background: #00c6ff;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Face Mask Detection</h1>
+    <p class="subtitle">Real-time detection powered by YOLOv8</p>
+
+    <div class="stream-container">
+        <img src="{{ url_for('video_feed') }}" alt="Live Detection Stream">
+    </div>
+
+    <div class="status">
+        <div class="dot"></div>
+        Live — webcam stream active
+    </div>
+
+</body>
+</html>
